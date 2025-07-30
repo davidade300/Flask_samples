@@ -1,47 +1,61 @@
-from flask import Flask, Response, jsonify, request
+from flask import Flask, jsonify, request
+from flask_restful import Api, Resource
 
 app = Flask(__name__)
-
-# sample data
-tasks: list = [
-    {"id": 1, "title": "Learn Flask", "done": False},
-    {"id": 2, "title": "Build an API", "done": False},
-]
+api = Api(app)
 
 
-@app.route("/")
-def hello() -> str:
-    return "Hello World!"
+tasks: list = []
 
 
-@app.route("/api/tasks", methods=["GET"])
-def get_tasks() -> Response:
-    return jsonify(tasks)
+class Task(Resource):
+    def get(self, task_id):
+        task = next((task for task in tasks if task["id"] == task_id), None)
 
+        if task is None:
+            return ({"error": "Task not found"}, 404)
 
-@app.route("/api/tasks", methods=["POST"])
-def add_task():
-    new_task = request.json
-    tasks.append(new_task)
-    return (jsonify(new_task), 201)
+        return task
 
+    def post(self):
+        if not request.json or "title" not in request.json:
+            return ({"error": "Task not found"}, 404)
 
-@app.route("/api/tasks/<int:task_id>", methods=["PUT"])
-def update_task(task_id):
-    task = next((task for task in tasks if task["id"] == task_id), None)
+        new_task = {
+            "id": len(tasks) + 1,
+            "title": request.json["title"],
+            "done": False,
+        }
+        tasks.append(new_task)
 
-    if task:
+        return (new_task, 201)
+
+    def put(self, task_id):
+        task = next((task for task in tasks if task["id"] == task_id), None)
+
+        if task is None:
+            return (
+                {"error": "Not Found", "message": "Request must be JSON"},
+                400,
+            )
+
+        if not request.json:
+            return (
+                {"error": "Bad request", "message": "Request must be JSON"},
+                400,
+            )
+
         task.update(request.json)
         return jsonify(task)
 
-    return (jsonify({"error": "Task not found"}), 404)
+    def delete(self, task_id):
+        global tasks  # using the global tasks variable
+
+        tasks = [task for task in tasks if task["id"] != task_id]
+        return ({"result": "Task deleted"}, 204)
 
 
-# captures an integer from the url and passes it to the function
-@app.route("/user/<int:user_id>")
-def user_profile(user_id):
-    return f"User Id: {user_id}"
-
+api.add_resource(Task, "/api/tasks", "/api/tasks/<int:task_id>")
 
 if __name__ == "__main__":
     app.run(debug=True)
