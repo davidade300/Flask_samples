@@ -55,6 +55,24 @@ class Task(Resource):
         return ({"result": "Task deleted"}, 204)
 
 
+@app.errorhandler(404)
+def not_found(error):
+    """
+    defines a custom handler for 404 errors.
+    """
+
+    return (jsonify({"error": "resource not found"}), 404)
+
+
+@app.errorhandler(500)
+def internal_error(error):
+    """
+    defines a custom handler for 500 errors.
+    """
+
+    return (jsonify({"error": "Internal server error"}), 500)
+
+
 api.add_resource(Task, "/api/tasks", "/api/tasks/<int:task_id>")
 
 if __name__ == "__main__":
