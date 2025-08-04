@@ -1,0 +1,28 @@
+
+POST http://127.0.0.1:5000/register
+Content-Type: application/json
+
+{
+"username":"testuser",
+"password":"testpass"
+}
+
+###
+
+POST http://127.0.0.1:5000/login
+Content-Type: application/json
+
+{
+"username":"testuser",
+"password":"testpass"
+}
+
+
+###
+GET http://127.0.0.1:5000/protected
+ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJmcmVzaCI6ZmFsc2UsImlhdCI6MTc1NDMxNjM5OSwianRpIjoiZGM3MTA3OTktNjZiYi00NWE1LWJiZWYtYTBlZjgwNWFiZDIyIiwidHlwZSI6ImFjY2VzcyIsInN1YiI6InRlc3R1c2VyIiwibmJmIjoxNzU0MzE2Mzk5LCJjc3JmIjoiYTI4ZDM3YmQtYzUwMy00ZjYxLThlMTgtNWZjMGUzODU2YTE5IiwiZXhwIjoxNzU0MzE3Mjk5fQ.vrgFDsHEQ-OcnEvBZ3njx0NGIa0-9NLFdoIp2NdT24Y
+
+
+
+
+

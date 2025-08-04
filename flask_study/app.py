@@ -1,79 +1,50 @@
+from blog.routes import blog_bp
 from flask import Flask, jsonify, request
-from flask_restful import Api, Resource
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 
 app = Flask(__name__)
-api = Api(app)
+
+app.config["JWT_SECRET_KEY"] = "your_secret_key"
+
+jwt = JWTManager(app)
+
+users = {}
 
 
-tasks: list = []
+@app.route("/register", methods=["POST"])  # type: ignore
+def register():
+    username = request.json.get("username")  # type: ignore
+    password = request.json.get("password")  # type: ignore
+
+    if username in users:
+        return (jsonify({"msg": "user alreayd exists!"}), 400)
+
+    users[username] = password  # real app = hashed passwords
+
+    return (jsonify({"msg": "User registered successfully!"}), 201)
 
 
-class Task(Resource):
-    def get(self, task_id):
-        task = next((task for task in tasks if task["id"] == task_id), None)
+@app.route("/login", methods=["POST"])  # type: ignore
+def login():
+    username = request.json.get("username")  # type: ignore
+    password = request.json.get("password")  # type: ignore
 
-        if task is None:
-            return ({"error": "Task not found"}, 404)
+    if username not in users or users[username] != password:
+        return (jsonify({"msg": "Bad username or password!"}), 401)
 
-        return task
+    access_token = create_access_token(identity=username)
 
-    def post(self):
-        if not request.json or "title" not in request.json:
-            return ({"error": "Task not found"}, 404)
-
-        new_task = {
-            "id": len(tasks) + 1,
-            "title": request.json["title"],
-            "done": False,
-        }
-        tasks.append(new_task)
-
-        return (new_task, 201)
-
-    def put(self, task_id):
-        task = next((task for task in tasks if task["id"] == task_id), None)
-
-        if task is None:
-            return (
-                {"error": "Not Found", "message": "Request must be JSON"},
-                400,
-            )
-
-        if not request.json:
-            return (
-                {"error": "Bad request", "message": "Request must be JSON"},
-                400,
-            )
-
-        task.update(request.json)
-        return jsonify(task)
-
-    def delete(self, task_id):
-        global tasks  # using the global tasks variable
-
-        tasks = [task for task in tasks if task["id"] != task_id]
-        return ({"result": "Task deleted"}, 204)
+    return (jsonify(access_token=access_token), 200)
 
 
-@app.errorhandler(404)
-def not_found(error):
-    """
-    defines a custom handler for 404 errors.
-    """
-
-    return (jsonify({"error": "resource not found"}), 404)
+@app.route("/protected", methods=["GET"])
+@jwt_required()
+def protected():
+    return (jsonify(msg="This is a protected route!"), 200)
 
 
-@app.errorhandler(500)
-def internal_error(error):
-    """
-    defines a custom handler for 500 errors.
-    """
-
-    return (jsonify({"error": "Internal server error"}), 500)
-
-
-api.add_resource(Task, "/api/tasks", "/api/tasks/<int:task_id>")
+# Register the blueprint with a URL prefix
+app.register_blueprint(blog_bp, url_prefix="/api")
 
 if __name__ == "__main__":
     app.run(debug=True)
